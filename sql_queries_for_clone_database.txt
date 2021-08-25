@@ -1,0 +1,1736 @@
+------ Indexes
+-- ALTER TABLE CLONES ADD CLONE_ID INT AUTO_INCREMENT;
+-- CREATE UNIQUE INDEX IDX_COLUMN_ID ON CLONES(CLONE_ID);
+-- ALTER TABLE FALSE_POSITIVES ADD FP_ID INT AUTO_INCREMENT;
+-- CREATE UNIQUE INDEX IDX_FP_ID ON FALSE_POSITIVES(FP_ID );
+
+-- Clean everything...
+DROP TABLE IF EXISTS CLONE_IDS;
+DROP TABLE IF EXISTS FEATURE_VECTOR;
+DROP TABLE IF EXISTS FP_IDS;
+DROP TABLE IF EXISTS SAVED_METHOD_IDS;
+
+-- All possible IDs from the small feature source code function set (731689 row)
+DROP TABLE IF EXISTS SAVED_METHOD_IDS;
+CREATE TABLE IF NOT EXISTS SAVED_METHOD_IDS(function_id int);
+CREATE UNIQUE INDEX IDX_FUNCTION_ID ON SAVED_METHOD_IDS(function_id);
+
+INSERT INTO SAVED_METHOD_IDS
+SELECT DISTINCT f.ID FROM SAVED_METHOD_FEATURES as smf
+INNER JOIN FUNCTIONS as f ON f.TYPE=smf.DIRECTORY and f.NAME=smf.FILENAME and f.STARTLINE=smf.LINE_BEGIN and f.ENDLINE=smf.LINE_END;
+
+
+-- True positive distinct IDs (14291 rows)
+DROP TABLE IF EXISTS CLONE_IDS;
+CREATE TABLE IF NOT EXISTS CLONE_IDS (function_id int);
+CREATE UNIQUE INDEX IDX_CLONE_FUNCTION_ID ON CLONE_IDS (function_id);
+
+INSERT INTO CLONE_IDS
+SELECT DISTINCT c.FUNCTION_ID_ONE FROM CLONES as c
+INNER JOIN SAVED_METHOD_IDS as smi ON smi.FUNCTION_ID=c.FUNCTION_ID_ONE
+UNION
+SELECT DISTINCT c.FUNCTION_ID_TWO FROM CLONES as c
+INNER JOIN SAVED_METHOD_IDS as smi ON smi.FUNCTION_ID=c.FUNCTION_ID_TWO;
+
+
+-- False positive distinct IDs (56533 rows)
+DROP TABLE IF EXISTS FP_IDS;
+CREATE TABLE IF NOT EXISTS FP_IDS (function_id int);
+CREATE UNIQUE INDEX IDX_FP_FUNCTION_ID ON FP_IDS(function_id);
+
+INSERT INTO FP_IDS 
+SELECT DISTINCT c.FUNCTION_ID_ONE FROM FALSE_POSITIVES as c
+INNER JOIN SAVED_METHOD_IDS as smi ON smi.FUNCTION_ID=c.FUNCTION_ID_ONE
+UNION
+SELECT DISTINCT c.FUNCTION_ID_TWO FROM FALSE_POSITIVES as c
+INNER JOIN SAVED_METHOD_IDS as smi ON smi.FUNCTION_ID=c.FUNCTION_ID_TWO;
+
+// Create feature vector for saving analyzed data
+DROP TABLE IF EXISTS FEATURE_VECTOR ;
+CREATE TABLE IF NOT EXISTS FEATURE_VECTOR (
+source_method_length integer,
+source_parameter_count integer,
+source_declared_variable_count integer,
+source_constructor_call_count integer,
+source_catch_clause_count integer,
+source_switch_count integer,
+source_case_count integer,
+source_iterator_count integer,
+source_assignment_count integer,
+source_method_call_count integer,
+source_field_access_count integer,
+source_expression_count integer,
+source_distinct_type_count integer,
+source_object_creation_count integer,
+source_if_count integer,
+source_super_call_count integer,
+source_return_count integer,
+source_try_statement_count integer,
+SOURCE_CONSTRUCTOR_PARAMETERS integer,
+SOURCE_ARRAY_CREATION_COUNT integer,
+SOURCE_TOKEN_COUNT integer,
+source_cast_expression_count integer,
+source_is_static integer,
+source_is_abstract integer,
+source_is_public integer,
+source_is_private integer,
+source_is_protected integer,
+source_is_final integer,
+source_is_synchronized integer,
+source_method_type_length integer,
+SOURCE_ASSIGNMENT_IN_FOR INTEGER,
+SOURCE_ASSIGNMENT_IN_FOREACH INTEGER,
+SOURCE_ASSIGNMENT_IN_IF INTEGER,
+SOURCE_ASSIGNMENT_IN_SWITCH INTEGER,
+SOURCE_ASSIGNMENT_IN_TRY INTEGER,
+SOURCE_ASSIGNMENT_IN_WHILE INTEGER,
+SOURCE_DECLARATION_IN_FOR INTEGER,
+SOURCE_DECLARATION_IN_FOREACH INTEGER,
+SOURCE_DECLARATION_IN_IF INTEGER,
+SOURCE_DECLARATION_IN_SWITCH INTEGER,
+SOURCE_DECLARATION_IN_TRY INTEGER,
+SOURCE_DECLARATION_IN_WHILE INTEGER,
+SourcevariableDeclarationWithAssignment integer,
+SourcevariableDeclarationWithoutAssignment integer,
+SourceintegerLiteralExpression integer,
+SourcebinaryExpression integer,
+SourceprimitiveType integer,
+SourcelineComment integer,
+SourcearrayType integer,
+SourcemethodOverrides integer,
+SourcenameExpressions integer,
+SourcesimpleNames integer,
+Sourcemodifiers integer,
+SourcesubParameters integer,
+SourcemarkerAnnotations integer,
+SourceblockStatements integer,
+SourcenullLiterals integer,
+SourcethrowStatements integer,
+SourceforStatementCount integer,
+SourceforeachStatementCount integer,
+SourcewhileStatementCount integer,
+SourceprimitiveTypes integer,
+SourceclassInterfaceTypes integer,
+SourceDoStmt integer,
+SourceAssertStmt integer,
+SourceDoubleLiteralExpr integer,
+SourceBooleanLiteralExpr integer,
+SourceCharLiteralExpr integer,
+SourceStringLiteralExpr integer,
+SourceArrayAccessExpr integer,
+SourceConditionalExpr integer,
+SourceEnclosedExpr integer,
+SourceInstanceOfExpr integer,
+SourceLambdaExpr integer,
+SourceLiteralExpr integer,
+SourceLongLiteralExpr integer,
+SourceMethodReferenceExpr integer,
+SourceNormalAnnotationExpr integer,
+SourcePatternExpr integer,
+SourceSingleMemberAnnotationExpr integer,
+SourceThisExpr integer,
+SourceTypeExpr integer,
+SourceUnaryExpr integer,
+SourceBreakStmt integer,
+SourceContinueStmt integer,
+SourceYieldStmt integer,
+
+target_method_length integer,
+target_parameter_count integer,
+target_declared_variable_count integer,
+target_constructor_call_count integer,
+target_catch_clause_count integer,
+target_switch_count integer,
+target_case_count integer,
+target_iterator_count integer,
+target_assignment_count integer,
+target_method_call_count integer,
+target_field_access_count integer,
+target_expression_count integer,
+target_distinct_type_count integer,
+target_object_creation_count integer,
+target_if_count integer,
+target_super_call_count integer,
+target_return_count integer,
+target_try_statement_count integer,
+TARGET_CONSTRUCTOR_PARAMETERS integer,
+TARGET_ARRAY_CREATION_COUNT integer,
+TARGET_TOKEN_COUNT integer,
+target_cast_expression_count integer,
+target_is_static integer,
+target_is_abstract integer,
+target_is_public integer,
+target_is_private integer,
+target_is_protected integer,
+target_is_final integer,
+target_is_synchronized integer,
+target_method_type_length integer,
+TARGET_ASSIGNMENT_IN_FOR INTEGER,
+TARGET_ASSIGNMENT_IN_FOREACH INTEGER,
+TARGET_ASSIGNMENT_IN_IF INTEGER,
+TARGET_ASSIGNMENT_IN_SWITCH INTEGER,
+TARGET_ASSIGNMENT_IN_TRY INTEGER,
+TARGET_ASSIGNMENT_IN_WHILE INTEGER,
+TARGET_DECLARATION_IN_FOR INTEGER,
+TARGET_DECLARATION_IN_FOREACH INTEGER,
+TARGET_DECLARATION_IN_IF INTEGER,
+TARGET_DECLARATION_IN_SWITCH INTEGER,
+TARGET_DECLARATION_IN_TRY INTEGER,
+TARGET_DECLARATION_IN_WHILE INTEGER,
+TargetvariableDeclarationWithAssignment integer,
+TargetvariableDeclarationWithoutAssignment integer,
+TargetintegerLiteralExpression integer,
+TargetbinaryExpression integer,
+TargetprimitiveType integer,
+TargetlineComment integer,
+TargetarrayType integer,
+TargetmethodOverrides integer,
+TargetnameExpressions integer,
+TargetsimpleNames integer,
+Targetmodifiers integer,
+TargetsubParameters integer,
+TargetmarkerAnnotations integer,
+TargetblockStatements integer,
+TargetnullLiterals integer,
+TargetthrowStatements integer,
+TargetforStatementCount integer,
+TargetforeachStatementCount integer,
+TargetwhileStatementCount integer,
+TargetprimitiveTypes integer,
+TargetclassInterfaceTypes integer,
+TargetDoStmt integer,
+TargetAssertStmt integer,
+TargetDoubleLiteralExpr integer,
+TargetBooleanLiteralExpr integer,
+TargetCharLiteralExpr integer,
+TargetStringLiteralExpr integer,
+TargetArrayAccessExpr integer,
+TargetConditionalExpr integer,
+TargetEnclosedExpr integer,
+TargetInstanceOfExpr integer,
+TargetLambdaExpr integer,
+TargetLiteralExpr integer,
+TargetLongLiteralExpr integer,
+TargetMethodReferenceExpr integer,
+TargetNormalAnnotationExpr integer,
+TargetPatternExpr integer,
+TargetSingleMemberAnnotationExpr integer,
+TargetThisExpr integer,
+TargetTypeExpr integer,
+TargetUnaryExpr integer,
+TargetBreakStmt integer,
+TargetContinueStmt integer,
+TargetYieldStmt integer,
+
+Difference integer,
+
+clone varchar(12));
+
+
+// Clone data TYPE1
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 41544
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'TYPE1'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 1;
+
+
+// Clone data TYPE2
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 4200
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'TYPE2'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 2;
+
+
+// Clone data VST3
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 4268
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'VST3'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 3 AND 
+  CASE WHEN C.SIMILARITY_LINE  > C.SIMILARITY_TOKEN 
+     THEN C.SIMILARITY_TOKEN >= 0.9 AND C.SIMILARITY_TOKEN <= 1.0
+     ELSE C.SIMILARITY_LINE >= 0.9 AND C.SIMILARITY_LINE <= 1.0
+  END;
+
+
+// Clone data ST3
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 6697
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'ST3'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 3 AND 
+  CASE WHEN C.SIMILARITY_LINE  > C.SIMILARITY_TOKEN 
+     THEN C.SIMILARITY_TOKEN >= 0.7 AND C.SIMILARITY_TOKEN < 0.9
+     ELSE C.SIMILARITY_LINE >= 0.7 AND C.SIMILARITY_LINE < 0.9
+  END;
+
+
+// Clone data MT3
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 20490
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'MT3'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 3 AND 
+  CASE WHEN C.SIMILARITY_LINE  > C.SIMILARITY_TOKEN 
+     THEN C.SIMILARITY_TOKEN >= 0.5 AND C.SIMILARITY_TOKEN < 0.7
+     ELSE C.SIMILARITY_LINE >= 0.5 AND C.SIMILARITY_LINE < 0.7
+  END;
+
+
+// Clone data WT3-4
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 1674644
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'WT3'
+FROM CLONES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM CLONE_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 3 AND 
+  CASE WHEN C.SIMILARITY_LINE  > C.SIMILARITY_TOKEN 
+     THEN C.SIMILARITY_TOKEN > 0 AND C.SIMILARITY_TOKEN < 0.5
+     ELSE C.SIMILARITY_LINE > 0 AND C.SIMILARITY_LINE < 0.5
+  END;
+
+
+
+// False positive data for getting 0 labels (265266)
+INSERT INTO FEATURE_VECTOR 
+SELECT TOP 58718
+FIRST_ID.METHOD_LENGTH,
+FIRST_ID.PARAMETER_COUNT,
+FIRST_ID.DECLARED_VARIABLE_COUNT,
+FIRST_ID.CONSTRUCTOR_CALL_COUNT,
+FIRST_ID.CATCH_CLAUSE_COUNT,
+FIRST_ID.SWITCH_COUNT,
+FIRST_ID.CASE_COUNT,
+FIRST_ID.ITERATOR_COUNT,
+FIRST_ID.ASSIGNMENT_COUNT,
+FIRST_ID.METHOD_CALL_COUNT,
+FIRST_ID.FIELD_ACCESS_COUNT,
+FIRST_ID.EXPRESSION_COUNT,
+FIRST_ID.DISTINCT_TYPE_COUNT,
+FIRST_ID.OBJECT_CREATION_COUNT,
+FIRST_ID.IF_COUNT,
+FIRST_ID.SUPER_CALL_COUNT,
+FIRST_ID.RETURN_COUNT,
+FIRST_ID.TRY_STATEMENT_COUNT,
+FIRST_ID.CONSTRUCTOR_PARAMETERS,
+FIRST_ID.ARRAY_CREATION_COUNT,
+FIRST_ID.TOKEN_COUNT,
+FIRST_ID.CAST_EXPRESSION_COUNT,
+FIRST_ID.IS_STATIC,
+FIRST_ID.IS_ABSTRACT,
+FIRST_ID.IS_PUBLIC,
+FIRST_ID.IS_PRIVATE,
+FIRST_ID.IS_PROTECTED,
+FIRST_ID.IS_FINAL,
+FIRST_ID.IS_SYNCHRONIZED,
+FIRST_ID.METHOD_TYPE_LENGTH,
+FIRST_ID.assignmentInFor,
+FIRST_ID.assignmentInForeach,
+FIRST_ID.assignmentInIf,
+FIRST_ID.assignmentInSwitch,
+FIRST_ID.assignmentInTry,
+FIRST_ID.assignmentInWhile,
+FIRST_ID.declarationInFor,
+FIRST_ID.declarationInForeach,
+FIRST_ID.declarationInIf,
+FIRST_ID.declarationInSwitch,
+FIRST_ID.declarationInTry,
+FIRST_ID.declarationInWhile,
+FIRST_ID.variableDeclarationWithAssignment,
+FIRST_ID.variableDeclarationWithoutAssignment,
+FIRST_ID.integerLiteralExpression,
+FIRST_ID.binaryExpression,
+FIRST_ID.primitiveType,
+FIRST_ID.lineComment,
+FIRST_ID.arrayType,
+FIRST_ID.methodOverrides,
+FIRST_ID.nameExpressions,
+FIRST_ID.simpleNames,
+FIRST_ID.modifiers,
+FIRST_ID.subParameters,
+FIRST_ID.markerAnnotations,
+FIRST_ID.blockStatements,
+FIRST_ID.nullLiterals,
+FIRST_ID.throwStatements,
+FIRST_ID.forStatementCount,
+FIRST_ID.foreachStatementCount,
+FIRST_ID.whileStatementCount,
+FIRST_ID.primitiveTypes,
+FIRST_ID.classInterfaceTypes,
+FIRST_ID.DoStmt,
+FIRST_ID.AssertStmt,
+FIRST_ID.DoubleLiteralExpr,
+FIRST_ID.BooleanLiteralExpr,
+FIRST_ID.CharLiteralExpr,
+FIRST_ID.StringLiteralExpr,
+FIRST_ID.ArrayAccessExpr,
+FIRST_ID.ConditionalExpr,
+FIRST_ID.EnclosedExpr,
+FIRST_ID.InstanceOfExpr,
+FIRST_ID.LambdaExpr,
+FIRST_ID.LiteralExpr,
+FIRST_ID.LongLiteralExpr,
+FIRST_ID.MethodReferenceExpr,
+FIRST_ID.NormalAnnotationExpr,
+FIRST_ID.PatternExpr,
+FIRST_ID.SingleMemberAnnotationExpr,
+FIRST_ID.ThisExpr,
+FIRST_ID.TypeExpr,
+FIRST_ID.UnaryExpr,
+FIRST_ID.BreakStmt,
+FIRST_ID.ContinueStmt,
+FIRST_ID.YieldStmt,
+
+SECOND_ID.METHOD_LENGTH,
+SECOND_ID.PARAMETER_COUNT,
+SECOND_ID.DECLARED_VARIABLE_COUNT,
+SECOND_ID.CONSTRUCTOR_CALL_COUNT,
+SECOND_ID.CATCH_CLAUSE_COUNT,
+SECOND_ID.SWITCH_COUNT,
+SECOND_ID.CASE_COUNT,
+SECOND_ID.ITERATOR_COUNT,
+SECOND_ID.ASSIGNMENT_COUNT,
+SECOND_ID.METHOD_CALL_COUNT,
+SECOND_ID.FIELD_ACCESS_COUNT,
+SECOND_ID.EXPRESSION_COUNT,
+SECOND_ID.DISTINCT_TYPE_COUNT,
+SECOND_ID.OBJECT_CREATION_COUNT,
+SECOND_ID.IF_COUNT,
+SECOND_ID.SUPER_CALL_COUNT,
+SECOND_ID.RETURN_COUNT,
+SECOND_ID.TRY_STATEMENT_COUNT,
+SECOND_ID.CONSTRUCTOR_PARAMETERS,
+SECOND_ID.ARRAY_CREATION_COUNT,
+SECOND_ID.TOKEN_COUNT,
+SECOND_ID.CAST_EXPRESSION_COUNT,
+SECOND_ID.IS_STATIC,
+SECOND_ID.IS_ABSTRACT,
+SECOND_ID.IS_PUBLIC,
+SECOND_ID.IS_PRIVATE,
+SECOND_ID.IS_PROTECTED,
+SECOND_ID.IS_FINAL,
+SECOND_ID.IS_SYNCHRONIZED,
+SECOND_ID.METHOD_TYPE_LENGTH,
+SECOND_ID.assignmentInFor,
+SECOND_ID.assignmentInForeach,
+SECOND_ID.assignmentInIf,
+SECOND_ID.assignmentInSwitch,
+SECOND_ID.assignmentInTry,
+SECOND_ID.assignmentInWhile,
+SECOND_ID.declarationInFor,
+SECOND_ID.declarationInForeach,
+SECOND_ID.declarationInIf,
+SECOND_ID.declarationInSwitch,
+SECOND_ID.declarationInTry,
+SECOND_ID.declarationInWhile,
+SECOND_ID.variableDeclarationWithAssignment,
+SECOND_ID.variableDeclarationWithoutAssignment,
+SECOND_ID.integerLiteralExpression,
+SECOND_ID.binaryExpression,
+SECOND_ID.primitiveType,
+SECOND_ID.lineComment,
+SECOND_ID.arrayType,
+SECOND_ID.methodOverrides,
+SECOND_ID.nameExpressions,
+SECOND_ID.simpleNames,
+SECOND_ID.modifiers,
+SECOND_ID.subParameters,
+SECOND_ID.markerAnnotations,
+SECOND_ID.blockStatements,
+SECOND_ID.nullLiterals,
+SECOND_ID.throwStatements,
+SECOND_ID.forStatementCount,
+SECOND_ID.foreachStatementCount,
+SECOND_ID.whileStatementCount,
+SECOND_ID.primitiveTypes,
+SECOND_ID.classInterfaceTypes,
+SECOND_ID.DoStmt,
+SECOND_ID.AssertStmt,
+SECOND_ID.DoubleLiteralExpr,
+SECOND_ID.BooleanLiteralExpr,
+SECOND_ID.CharLiteralExpr,
+SECOND_ID.StringLiteralExpr,
+SECOND_ID.ArrayAccessExpr,
+SECOND_ID.ConditionalExpr,
+SECOND_ID.EnclosedExpr,
+SECOND_ID.InstanceOfExpr,
+SECOND_ID.LambdaExpr,
+SECOND_ID.LiteralExpr,
+SECOND_ID.LongLiteralExpr,
+SECOND_ID.MethodReferenceExpr,
+SECOND_ID.NormalAnnotationExpr,
+SECOND_ID.PatternExpr,
+SECOND_ID.SingleMemberAnnotationExpr,
+SECOND_ID.ThisExpr,
+SECOND_ID.TypeExpr,
+SECOND_ID.UnaryExpr,
+SECOND_ID.BreakStmt,
+SECOND_ID.ContinueStmt,
+SECOND_ID.YieldStmt,
+
+0,
+'nonmatch'
+FROM FALSE_POSITIVES AS C
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as FIRST_ID on FIRST_ID.ID = C.FUNCTION_ID_ONE
+INNER JOIN (
+    SELECT F.ID, SMF.* 
+    FROM SAVED_METHOD_FEATURES as SMF
+    INNER JOIN FUNCTIONS as F on F.TYPE=SMF.DIRECTORY and F.NAME=SMF.FILENAME and F.STARTLINE=SMF.LINE_BEGIN and F.ENDLINE=SMF.LINE_END
+    WHERE F.NORMALIZED_SIZE > 5
+) as SECOND_ID on SECOND_ID .ID = C.FUNCTION_ID_TWO
+WHERE C.FUNCTION_ID_ONE IN (
+  SELECT CID.FUNCTION_ID FROM FP_IDS AS CID
+) AND C.FUNCTION_ID_TWO IN (
+  SELECT CID.FUNCTION_ID FROM FP_IDS AS CID
+) AND C.SYNTACTIC_TYPE = 3;
+
+// Update the difference
+UPDATE FEATURE_VECTOR 
+SET Difference = 
+abs(source_method_length - target_method_length) +
+abs(source_parameter_count - target_parameter_count) +
+abs(source_declared_variable_count - target_declared_variable_count) +
+abs(source_constructor_call_count - target_constructor_call_count) +
+abs(source_catch_clause_count - target_catch_clause_count) +
+abs(source_switch_count - target_switch_count) +
+abs(source_case_count - target_case_count) +
+abs(source_iterator_count - target_iterator_count) +
+abs(source_assignment_count - target_assignment_count) +
+abs(source_method_call_count - target_method_call_count) +
+abs(source_field_access_count - target_field_access_count) +
+abs(source_expression_count - target_expression_count) +
+abs(source_distinct_type_count - target_distinct_type_count) +
+abs(source_object_creation_count - target_object_creation_count) +
+abs(source_if_count - target_if_count) +
+abs(source_super_call_count - target_super_call_count) +
+abs(source_return_count - target_return_count) +
+abs(source_try_statement_count - target_try_statement_count) +
+abs(SOURCE_CONSTRUCTOR_PARAMETERS - TARGET_CONSTRUCTOR_PARAMETERS) +
+abs(SOURCE_ARRAY_CREATION_COUNT - TARGET_ARRAY_CREATION_COUNT) +
+abs(SOURCE_TOKEN_COUNT - TARGET_TOKEN_COUNT) +
+abs(source_cast_expression_count - target_cast_expression_count) +
+abs(source_is_static - target_is_static) +
+abs(source_is_abstract - target_is_abstract) +
+abs(source_is_public - target_is_public) +
+abs(source_is_private - target_is_private) +
+abs(source_is_protected - target_is_protected) +
+abs(source_is_final - target_is_final) +
+abs(source_is_synchronized - target_is_synchronized) +
+abs(source_method_type_length - target_method_type_length) +
+abs(SOURCE_ASSIGNMENT_IN_FOR - TARGET_ASSIGNMENT_IN_FOR) +
+abs(SOURCE_ASSIGNMENT_IN_FOREACH - TARGET_ASSIGNMENT_IN_FOREACH) +
+abs(SOURCE_ASSIGNMENT_IN_IF - TARGET_ASSIGNMENT_IN_IF) +
+abs(SOURCE_ASSIGNMENT_IN_SWITCH - TARGET_ASSIGNMENT_IN_SWITCH) +
+abs(SOURCE_ASSIGNMENT_IN_TRY - TARGET_ASSIGNMENT_IN_TRY) +
+abs(SOURCE_ASSIGNMENT_IN_WHILE - TARGET_ASSIGNMENT_IN_WHILE) +
+abs(SOURCE_DECLARATION_IN_FOR - TARGET_DECLARATION_IN_FOR) +
+abs(SOURCE_DECLARATION_IN_FOREACH - TARGET_DECLARATION_IN_FOREACH) +
+abs(SOURCE_DECLARATION_IN_IF - TARGET_DECLARATION_IN_IF) +
+abs(SOURCE_DECLARATION_IN_SWITCH - TARGET_DECLARATION_IN_SWITCH) +
+abs(SOURCE_DECLARATION_IN_TRY - TARGET_DECLARATION_IN_TRY) +
+abs(SOURCE_DECLARATION_IN_WHILE - TARGET_DECLARATION_IN_WHILE) +
+abs(SourcevariableDeclarationWithAssignment - TargetvariableDeclarationWithAssignment) +
+abs(SourcevariableDeclarationWithoutAssignment - TargetvariableDeclarationWithoutAssignment) +
+abs(SourceintegerLiteralExpression - TargetintegerLiteralExpression) +
+abs(SourcebinaryExpression - TargetbinaryExpression) +
+abs(SourceprimitiveType - TargetprimitiveType) +
+abs(SourcelineComment - TargetlineComment) +
+abs(SourcearrayType - TargetarrayType) +
+abs(SourcemethodOverrides - TargetmethodOverrides) +
+abs(SourcenameExpressions - TargetnameExpressions) +
+abs(SourcesimpleNames - TargetsimpleNames) +
+abs(Sourcemodifiers - Targetmodifiers) +
+abs(SourcesubParameters - TargetsubParameters) +
+abs(SourcemarkerAnnotations - TargetmarkerAnnotations) +
+abs(SourceblockStatements - TargetblockStatements) +
+abs(SourcenullLiterals - TargetnullLiterals) +
+abs(SourcethrowStatements - TargetthrowStatements) +
+abs(SourceforStatementCount - TargetforStatementCount) +
+abs(SourceforeachStatementCount - TargetforeachStatementCount) +
+abs(SourcewhileStatementCount - TargetwhileStatementCount) +
+abs(SourceprimitiveTypes - TargetprimitiveTypes) +
+abs(SourceclassInterfaceTypes - TargetclassInterfaceTypes) +
+abs(SourceDoStmt - TargetDoStmt) +
+abs(SourceAssertStmt - TargetAssertStmt) +
+abs(SourceDoubleLiteralExpr - TargetDoubleLiteralExpr) +
+abs(SourceBooleanLiteralExpr - TargetBooleanLiteralExpr) +
+abs(SourceCharLiteralExpr - TargetCharLiteralExpr) +
+abs(SourceStringLiteralExpr - TargetStringLiteralExpr) +
+abs(SourceArrayAccessExpr - TargetArrayAccessExpr) +
+abs(SourceConditionalExpr - TargetConditionalExpr) +
+abs(SourceEnclosedExpr - TargetEnclosedExpr) +
+abs(SourceInstanceOfExpr - TargetInstanceOfExpr) +
+abs(SourceLambdaExpr - TargetLambdaExpr) +
+abs(SourceLiteralExpr - TargetLiteralExpr) +
+abs(SourceLongLiteralExpr - TargetLongLiteralExpr) +
+abs(SourceMethodReferenceExpr - TargetMethodReferenceExpr) +
+abs(SourceNormalAnnotationExpr - TargetNormalAnnotationExpr) +
+abs(SourcePatternExpr - TargetPatternExpr) +
+abs(SourceSingleMemberAnnotationExpr - TargetSingleMemberAnnotationExpr) +
+abs(SourceThisExpr - TargetThisExpr) +
+abs(SourceTypeExpr - TargetTypeExpr) +
+abs(SourceUnaryExpr - TargetUnaryExpr) +
+abs(SourceBreakStmt - TargetBreakStmt) +
+abs(SourceContinueStmt - TargetContinueStmt) +
+abs(SourceYieldStmt - TargetYieldStmt);
+
+// (8520176 rows)
+SELECT COUNT(1) FROM FEATURE_VECTOR;
+
+
+
+
+
+
